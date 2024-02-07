@@ -1,0 +1,194 @@
+<html lang="en">
+  <head>
+    <title>Rustici Software - Initial Developer Hiring Test</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        font-size: 14px;
+        line-height: 20px;
+      }
+      li.question {
+        padding-top: 5px;
+        padding-bottom: 5px;
+      }
+      label.choice {
+        display: block;
+      }
+      .correct {
+        color: #336897;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h2>Randomized Questions</h2>
+    <ul id="questions"></ul>
+
+    <script>
+      (function () {
+        //
+        // `randomizeTest` accepts and returns a `Test` object. The questions in the returned object should
+        // be in a random order. The order of the choices within each question should also be randomized.
+        //
+        function randomizeTest(test) {
+          //
+          // The problem is essentially that we want to randomize the order of the questions, but in a way that
+          // maintains the correct choices and answers for each question. 
+          // the same thing applies to the choices- we want to shuffle the order in which they are listed, but
+          // we also want to shuffle the answers in the exact same way, so the correct choices are always highlighted in blue. 
+          // Fun stuff! 
+          //
+
+          // this is a basic shuffle function that takes an array of items and an array of indexes,
+          // and returns the items in a new order based on the indexes 
+          const shuffle = (items, indexes) => {
+            return items
+              .map((a, i) => ({ sort: indexes[i], value: a }))
+              .sort((a, b) => a.sort - b.sort)
+              .map((a) => a.value);
+          };
+
+          const shuffleQuestions = (test) => {
+            // 'shuffleIndex' arrays are how we are preserving the sort. It is simply an array of 
+            // randomly generated intergers. If the same shuffleIndex is provided to the
+            // `shuffle` function above, the items will be sorted in the same way every time.
+            const shuffleIndexes = [];
+
+            test.questions.forEach((q) => shuffleIndexes.push(Math.random()));
+
+            const shuffledquestions = shuffle(test.questions, shuffleIndexes);
+            const shuffledchoices = shuffle(test.choices, shuffleIndexes);
+            const shuffledanswers = shuffle(test.answers, shuffleIndexes);
+
+            return new Test(shuffledquestions, shuffledchoices, shuffledanswers);
+          };
+
+          // getting the `shuffleIndexes` array for the choices and answers requires a little more work
+          // since it's an array within an array
+          const getShuffleIndexesForChoicesAndAnswers = (test) => {
+            const shuffleIndexes = [];
+            const choiceSets = [];
+            test.choices.forEach((set) => {
+              let subArray = [];
+              set.forEach((choice) => {
+                subArray.push(Math.random());
+              });
+              choiceSets.push(subArray);
+            });
+            shuffleIndexes.push(choiceSets);
+            return shuffleIndexes;
+          };
+
+          const shuffleChoicesAndAnswers = (test, indexes) => {
+            let shuffledChoices = [];
+            let shuffledAnswers = [];
+            for (let i = 0; i < test.choices.length; i++) {
+              shuffledChoices.push(shuffle(test.choices[i], indexes[0][i]));
+              shuffledAnswers.push(shuffle(test.answers[i], indexes[0][i]));
+            }
+            return new Test(test.questions, shuffledChoices, shuffledAnswers);
+          };
+
+          const shuffledTest = shuffleQuestions(test);
+          const indexes = getShuffleIndexesForChoicesAndAnswers(shuffledTest);
+          const shuffledAgain = shuffleChoicesAndAnswers(shuffledTest, indexes);
+
+          return shuffledAgain;
+        }
+
+        function Test(questions, choices, answers) {
+          this.questions = questions;
+          this.choices = choices;
+          this.answers = answers;
+        }
+
+        //
+        // displays the sample test in the browser with the correct answer highlighted
+        //
+        function renderTest(test, parent) {
+          const randomizedTest = randomizeTest(test);
+
+          for (let i = 0; i < randomizedTest.questions.length; i += 1) {
+            const qElement = document.createElement("li");
+            let correctCount = 0;
+
+            qElement.setAttribute("class", "question");
+            qElement.appendChild(
+              document.createTextNode(randomizedTest.questions[i])
+            );
+
+            for (let j = 0; j < randomizedTest.answers[i].length; j += 1) {
+              if (randomizedTest.answers[i][j] === 1) {
+                correctCount += 1;
+              }
+            }
+
+            for (let j = 0; j < randomizedTest.choices[i].length; j += 1) {
+              const choiceLabelElement = document.createElement("label"),
+                choiceInputElement = document.createElement("input");
+
+              choiceInputElement.setAttribute(
+                "name",
+                (correctCount === 1 ? "radio" : "check") + i
+              );
+              choiceInputElement.setAttribute(
+                "type",
+                correctCount === 1 ? "radio" : "checkbox"
+              );
+              choiceInputElement.setAttribute("value", j);
+
+              choiceLabelElement.classList.add("choice");
+              if (randomizedTest.answers[i][j] === 1) {
+                choiceLabelElement.classList.add("correct");
+              }
+
+              choiceLabelElement.appendChild(choiceInputElement);
+              choiceLabelElement.appendChild(
+                document.createTextNode(randomizedTest.choices[i][j])
+              );
+
+              qElement.appendChild(choiceLabelElement);
+              parent.appendChild(qElement);
+            }
+          }
+        }
+
+        const questions = [
+            "What can you find in Rustici Software's office?",
+            "All of Rustici Software employees are expected to work no more than ____ hours per week.",
+            "The end users of Rustici Software's products number in the _________",
+            "Rustici Software is a (choose all that apply):",
+            "Tim likes to wear:",
+          ],
+          choices = [
+            [
+              "Dart Board",
+              "Ping Pong Table",
+              "Cubicles",
+              "Laptops with dual monitors",
+              "TPS reports, ummm yeah",
+            ],
+            ["80", "40", "50", "60"],
+            ["Tens", "Hundreds", "Thousands", "Millions", "Billions"],
+            [
+              "Great place to work",
+              "Respected leader in its field",
+              "Place where people don't matter, just results",
+            ],
+            ["Capri pants", "Goth attire", "Sport coat", "T-shirt and shorts"],
+          ],
+          answers = [
+            [1, 1, 0, 1, 0],
+            [0, 1, 0, 0],
+            [0, 0, 0, 1, 0],
+            [1, 1, 0],
+            [0, 0, 0, 1, 0],
+          ],
+          test = new Test(questions, choices, answers);
+
+        renderTest(test, document.getElementById("questions"));
+      })();
+    </script>
+  </body>
+</html>
